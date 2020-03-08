@@ -1,4 +1,6 @@
 import java.io.*;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -33,7 +35,12 @@ public class Question3b {
         @Override
         public void run() {
         try{
-            ReadTextFile();
+            Instant start = Instant.now();
+           ReadTextFile();
+            Instant finish = Instant.now();
+            long timeElapsed = Duration.between(start, finish).toMillis();
+            System.out.println("Create thread name " + Thread.currentThread().getName() + " " +
+                    timeElapsed +  " millis");
         }catch (Exception e){
 
         }
@@ -51,7 +58,7 @@ public class Question3b {
                 try {
                     System.out.println("v2");
 
-                    sc2 = new Scanner(new File("Question1/Independence.txt"));
+                    sc2 = new Scanner(new File("Question3/Independence.txt"));
                 } catch (FileNotFoundException e) {
                     e.printStackTrace();
                 }
@@ -65,7 +72,7 @@ public class Question3b {
                         store.add(new TextFileAnalysis(s, count));
                         count =0;
                     }
-
+                    store.add(new TextFileAnalysis(" ", count));
                     System.out.println("Sleeping this current thread");
                 }
               //  System.out.println(store.size());
@@ -89,7 +96,12 @@ public class Question3b {
         @Override
         public void run() {
             try {
+                Instant start = Instant.now();
                 ReOrder();
+                Instant finish = Instant.now();
+                long timeElapsed = Duration.between(start, finish).toMillis();
+                System.out.println("reorder thread name " + Thread.currentThread().getName() + " " +
+                        timeElapsed +  " millis");
             } catch (Exception e) {
 
             }
@@ -178,10 +190,6 @@ public class Question3b {
             service.execute(new Reverse(storage, reverseCopy));
 
         }
-
-
-        //service.execute(new Reverse(storage, reverseCopy));
-      //  service.execute(new Print(reverseCopy));
         service.shutdown();
     }
 

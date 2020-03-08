@@ -1,7 +1,6 @@
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Random;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -16,13 +15,11 @@ public class Game {
     private static int count2 = -1;
     private static int setSize =0;
     private static int newSize;
+    private static int create;
+    private static boolean state = true;
 
-    private static  final Object lock2 = new Object();
     private static final Object lock3 = new Object();
-    private static boolean start = false;
-    private static Random r = new Random();
 
-    //private static PlayerInfo[] battle = new PlayerInfo[20];
 
 
     private static class PlayerCreate implements Runnable {
@@ -32,7 +29,7 @@ public class Game {
         static ReentrantLock counterLock = new ReentrantLock(true); // enable fairness policy
 
 
-        private Object lock = new Object();
+        private final Object lock = new Object();
 
 
         public PlayerCreate(List<PlayerInfo> list2, String name, int[] arr) {
@@ -44,7 +41,13 @@ public class Game {
         @Override
         public void run() {
             try {
+                Instant start = Instant.now();
                 Create();
+                Instant finish = Instant.now();
+                long timeElapsed = Duration.between(start, finish).toMillis();
+                  System.out.println("Create thread name " + Thread.currentThread().getName() + " " +
+                          timeElapsed +  " millis");
+
             } catch (Exception e) {
                 System.out.println();
             }
@@ -74,28 +77,23 @@ public class Game {
                 boolean inGame = true;
                 boolean win = false;
                 int score = 0;
-                for (int i = 0; i < 5; i++) {
+                for (int i = 0; i < create; i++) {
                     Count();
                     int move = arr[r.nextInt(arr.length)];
                     int num = count;
                     String id = name + " " + num;
 
-                    list2.add(new PlayerInfo(id, move, score, inGame, win));
-                    System.out.println("Thread create player " + id);
+                    list2.add(new PlayerInfo(id, move, score, true, win));
 
-                    if (list2.size() == setSize) {
-                        System.out.println("max");
-                        start = true;
-                        awake();
-                    }
+                }
+                if (list2.size() == setSize) {
+                    awake();
                 }
 
             }
 
         }
     }
-
-    ///
 
 
     public static class PlayerValidation implements Runnable {
@@ -112,7 +110,6 @@ public class Game {
         private PlayerValidation(String name, List<PlayerInfo> list4,
                                  List<PlayerInfo> Enlist,
                                  int[] arr, int validate
-                                 //PlayerInfo[] battle
         ) {
             this.name = name;
             this.arr = arr;
@@ -134,18 +131,20 @@ public class Game {
         @Override
         public void run() {
             try {
+                Instant start = Instant.now();
                 Match2();
+                Instant finish = Instant.now();
+                long timeElapsed = Duration.between(start, finish).toMillis();
+                System.out.println("Match thread name " + Thread.currentThread().getName() + " " +
+                        timeElapsed +  " millis");
             } catch (Exception e) {
 
             }
         }
 
-
         private void Match2() throws InterruptedException {
             synchronized (lock3) {
-                System.out.println("Asleep");
                lock3.wait();
-               System.out.println("Awake");
               //  while (true) {
                     while (!list4.isEmpty()) {
                         String pname = "";
@@ -154,28 +153,18 @@ public class Game {
                         boolean inGame = false;
 
                         Count2();
-                        try {
                             if(count2 < list4.size()) {
+                                System.out.println(list4.size());
                                 pname = list4.get(count2).getName();
                                 score = list4.get(count2).getScore();
                                 move = list4.get(count2).getMove();
                                 inGame = list4.get(count2).isInGame();
                             }
-                        } catch (Exception e) {
-                            System.out.println(e.getCause());
-                            start = false;
 
-                        }
-                        if(start == false){
-                            break;
-                        }
 
-                        if (inGame == true) {
+                       // if (inGame == true) {
                             for (int j = 0; j < list4.size(); j++) {
                                 int opponentMove = list4.get(j).getMove();
-                               // while (move == opponentMove) {
-                               //     move = arr[r.nextInt(arr.length)];
-                               // }
                                 if (move == opponentMove) {
                                 } else if (move == 1 && opponentMove == 3) {
                                     score++;
@@ -187,14 +176,12 @@ public class Game {
                                     score--;
                                 }
                             }
-                            System.out.println(count2);
                             try {
-                                //list4.remove(0);
-                                // Enlist.add(new PlayerInfo(pname, move, score, true, true));
                                 if (newSize == 2) {
                                 ///    System.out.println("executed ");
                                     System.out.println(pname+ " " + move + "  " +score);
                                     Enlist.add(new PlayerInfo(pname, move, score, true, true));
+
 
                                 }
                                 list4.set(count2, new PlayerInfo(pname, move, score, true, true));
@@ -203,7 +190,6 @@ public class Game {
                                 System.out.println("unable to update score");
                             }
                             if (count2 == newSize) {
-                                System.out.println("values are equivalent ");
                                 count2 = -1;
                                 newSize = newSize - 1;
                                 setSize = newSize;
@@ -224,7 +210,7 @@ public class Game {
 
                         }
 
-                    }
+                 //   }
             }
         }
     }
@@ -240,25 +226,22 @@ public class Game {
         @Override
         public void run() {
             try {
+                Instant start = Instant.now();
                 Winner();
+                Instant finish = Instant.now();
+                long timeElapsed = Duration.between(start, finish).toMillis();
+                System.out.println("Winner thread name " + Thread.currentThread().getName() + " " +
+                        timeElapsed +  " millis");
             } catch (Exception e) {
             }
         }
 
         private void Winner() throws InterruptedException {
             synchronized (lock3) {
-                System.out.println("hello");
                 lock3.wait();
-                System.out.println("assleep again");
                 lock3.wait();
                 int Max = 0;
                 String name = " ";
-
-                for (PlayerInfo i : list4) {
-                    System.out.println(i.getName() + " score " + i.getScore() + " move: " + i.getMove());
-                }
-
-                System.out.println();
                 for (PlayerInfo i : list4) {
                     if (i.getScore() > Max) {
                         Max = i.getScore();
@@ -266,37 +249,46 @@ public class Game {
                     }
                 }
                 System.out.println("winner" + name + " score " + Max );
+                list4.removeAll(list4);
             }
         }
     }
 
 
     public static void main(String[] args) {
-        setSize = 20;
-
-        newSize = setSize-1;
         Random r = new Random();
         int[] arr = {1, 2, 3};
-
-        int coreCount = Runtime.getRuntime().availableProcessors(); // count of cores computer has gets
-        ExecutorService service = Executors.newFixedThreadPool(coreCount);
-        service.execute(new PlayerWinner(Endlist));
-
-
-     //   }
-
-        for (int i = 0; i < 4; i++) {
-            service.execute(new PlayerCreate(list, "Player", arr));
+        int x = 0;
+        Scanner scan = new Scanner(System.in);
+        System.out.print("Enter any number: ");
+        x= scan.nextInt();
+         setSize =x;
+        newSize = setSize-1;
+        scan.close();
+        int loop = 0;;
+        create = 0;
+        for(int i = 1; i < 10; i++){
+            if(x % i == 0 && x!=i){
+                loop = i;
+                create = (x/i);
+            }
         }
-        for (int i = 0; i < 2; i++) {
-            service.execute(new PlayerValidation("match" , list, Endlist, arr, r.nextInt(20)));
 
+
+        if(x!=0) {
+            int coreCount = Runtime.getRuntime().availableProcessors(); // count of cores computer has gets
+            ExecutorService service = Executors.newFixedThreadPool(coreCount);
+            service.execute(new PlayerWinner(Endlist));
+            for (int i = 0; i < loop; i++) {
+                service.execute(new PlayerCreate(list, "Player", arr));
+            }
+
+            for (int i = 0; i < 6; i++) {
+                service.execute(new PlayerValidation("match", list, Endlist, arr, r.nextInt(20)));
+
+            }
+            service.shutdown();
         }
-
-
-        service.shutdown();
-
     }
-
 
 }

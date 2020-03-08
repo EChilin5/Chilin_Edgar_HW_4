@@ -1,4 +1,6 @@
 import java.io.*;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
@@ -15,7 +17,7 @@ public class Questio3 {
         int count = 0;
         Scanner sc2 = null;
         try {
-            sc2 = new Scanner(new File("Question1/Independence.txt"));
+            sc2 = new Scanner(new File("Question3/Independence.txt"));
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
@@ -27,7 +29,7 @@ public class Questio3 {
                 storage.add(new TextFileAnalysis(s, count));
                 count =0;
             }
-
+            storage.add(new TextFileAnalysis("", count));
         }
     }
 
@@ -77,7 +79,7 @@ public class Questio3 {
             }
         }
         BufferedWriter writer = new BufferedWriter(
-                new FileWriter("Question1/output_question1.txt", true)  //Set true for append mode
+                new FileWriter("Question3/output_question1.txt", true)  //Set true for append mode
         );
         for(int j = reverseCopy.size()-1; j>=stop; j--){
             System.out.print(reverseCopy.get(j).getWord() + " ");
@@ -91,10 +93,14 @@ public class Questio3 {
 
 
     public static void main(String[] args) throws IOException {
-        System.out.println("hello\n");
-
+        Instant start = Instant.now();
         ReadFile();
         Print();
+        Instant finish = Instant.now();
+        long timeElapsed = Duration.between(start, finish).toMillis();
+        System.out.println("Create thread name " + Thread.currentThread().getName() + " " +
+                timeElapsed +  " millis");
+
     }
 
 }

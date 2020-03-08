@@ -8,7 +8,7 @@ public class Game2_part2{
     //private static BlockingQueue<PlayerInfo> queue = new ArrayBlockingQueue<PlayerInfo>(20);
     private static List<PlayerInfo> list = Collections.synchronizedList(new ArrayList<>());
     private static List<PlayerInfo> Endlist = Collections.synchronizedList(new ArrayList<>());
-    private static Hashtable<String, Integer>  memorized = new Hashtable<String, Integer>();
+    private static Hashtable<String, Integer>  memorized = new Hashtable<>();
 
 
     private static int count = 0;
@@ -16,10 +16,9 @@ public class Game2_part2{
     private static int count3 = -1;
     private static int setSize = 0;
     private static int mod = 0;
-    private static int mod2 = 0;
     private static boolean state = true;
 
-    private static Object lock2 = new Object();
+    private static final Object lock2 = new Object();
     private static Object lock3 = new Object();
 
     public static class PlayerCreate implements Runnable {
@@ -136,13 +135,11 @@ public class Game2_part2{
                 int opOneMove = 0;
                 boolean opOne = true;
                 // boolean opOneGame = true;
-                int LocationOne = 0;
 
                 String opponentTwo = "";
                 int opTwoMove = 0;
                 boolean opTwo = true;
                 //boolean opTwoGame = true;
-                int LocationTwo = 0;
 
                 lock2.wait();
                 while (state) {
@@ -153,7 +150,6 @@ public class Game2_part2{
                             lock2.notifyAll();
                         }
                         if (count2 < list2.size()) {
-                            LocationOne = count2;
                             opponentOne = list2.get(count2).getName();
                             opOneMove = list2.get(count2).getMove();
                             opOne = list2.get(count2).isInGame();
@@ -161,7 +157,6 @@ public class Game2_part2{
                         }
                         Count2();
                         if (count2 < list2.size()) {
-                            LocationTwo = count2;
                             opponentTwo = list2.get(count2).getName();
                             opTwoMove = list2.get(count2).getMove();
                             opTwo = list2.get(count2).isInGame();
@@ -178,8 +173,8 @@ public class Game2_part2{
                             String combo = ""+opOneMove + opponentTwo;
 
 
-                            if (opOneMove == 1 && opOneMove == 3 || opOneMove == 3 && opOneMove == 2
-                                    || opOneMove == 2 && opOneMove == 1) {
+                            if (opOneMove == 1 && opTwoMove == 3 || opOneMove == 3 && opTwoMove == 2
+                                    || opOneMove == 2 && opTwoMove == 1) {
                                 System.out.println("                     " + opponentOne + " wins game ");
                                 opOne = true;
                                 opTwo = false;
@@ -193,7 +188,7 @@ public class Game2_part2{
                                         opOneMove, 0, opOne, true
                                 ));
                             }
-                            if (opTwo == true) {
+                            if (opTwo) {
                                 End.add(new PlayerInfo(opponentTwo,
                                         opTwoMove, 0, opTwo, true));
                             }
@@ -282,7 +277,6 @@ public class Game2_part2{
                         int opOneMove = 0;
                         boolean opOne = true;
                         // boolean opOneGame = true;
-                        int LocationOne = 0;
 
                         String opponentTwo = "";
                         int opTwoMove = 0;
@@ -292,7 +286,6 @@ public class Game2_part2{
                         for (int i = 0; i < 2; i++) {
                             Count3();
                             if (count3 < endlist.size()) {
-                                LocationOne = count3;
                                 opponentOne = endlist.get(count3).getName();
                                 opOneMove = endlist.get(count3).getMove();
                                 opOne = endlist.get(count3).isInGame();
@@ -314,8 +307,8 @@ public class Game2_part2{
                                     opTwoMove = arr[r.nextInt(arr.length)];
 
                                 }
-                                if (opOneMove == 1 && opOneMove == 3 || opOneMove == 3 && opOneMove == 2
-                                        || opOneMove == 2 && opOneMove == 1) {
+                                if (opOneMove == 1 && opTwoMove == 3 || opOneMove == 3 && opTwoMove == 2
+                                        || opOneMove == 2 && opTwoMove == 1) {
                                     System.out.println("                     " + opponentOne + " wins game ");
                                     opOne=true;
                                     opTwo = false;
@@ -324,12 +317,12 @@ public class Game2_part2{
                                     opOne=false;
                                     opTwo = true;
                                 }
-                                if (opOne == true) {
+                                if (opOne) {
                                     list2.add(new PlayerInfo(opponentOne,
                                             opOneMove, 0, opOne, true
                                     ));
                                 }
-                                if (opTwo == true) {
+                                if (opTwo) {
                                     list2.add(new PlayerInfo(opponentTwo,
                                             opTwoMove, 0, opTwo, true));
                                 }

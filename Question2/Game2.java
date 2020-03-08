@@ -1,20 +1,27 @@
+import java.time.Duration;
+import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class Game2 {
 
     private static List<PlayerInfo> list = Collections.synchronizedList(new ArrayList<>());
     private static List<PlayerInfo> Endlist = Collections.synchronizedList(new ArrayList<>());
+    private static AtomicInteger cycleCount = new AtomicInteger();
+    private static AtomicInteger tournamentCount = new AtomicInteger();
 
-
+private static int occurence = 0;
+private static int occurence2 = 0;
     private static int count = 0;
     private static int count2 = -1;
     private static int count3 = -1;
     private static int setSize = 0;
     private static int mod = 0;
     private static boolean state = true;
+    private static int create =0;
 
     private static final Object lock2 = new Object();
     private static final Object lock3 = new Object();
@@ -26,7 +33,7 @@ public class Game2 {
         static ReentrantLock counterLock = new ReentrantLock(true); // enable fairness policy
 
 
-        private Object lock = new Object();
+        private final Object lock = new Object();
 
 
         public PlayerCreate(List<PlayerInfo> list2, String name, int[] arr) {
@@ -38,7 +45,12 @@ public class Game2 {
         @Override
         public void run() {
             try {
+                Instant start = Instant.now();
                 Create();
+                Instant finish = Instant.now();
+                long timeElapsed = Duration.between(start, finish).toMillis();
+                System.out.println("Create thread name " + Thread.currentThread().getName() + " " +
+                        timeElapsed +  " millis");
             } catch (Exception e) {
 
             }
@@ -68,7 +80,7 @@ public class Game2 {
                 boolean inGame = true;
                 boolean win = false;
                 int score = 0;
-                for (int i = 0; i < 5; i++) {
+                for (int i = 0; i < 2; i++) {
                     Count();
 
                     int move = arr[r.nextInt(arr.length)];
@@ -76,7 +88,6 @@ public class Game2 {
                     String id = name + " " + num;
 
                     list2.add(new PlayerInfo(id, move, score, inGame, win));
-                    System.out.println("Thread create player " + id);
 
                 }
                 if (list2.size() == setSize) {
@@ -108,7 +119,12 @@ public class Game2 {
         //@Override
         public void run() {
             try {
+                Instant start = Instant.now();
                 TournamentEliminator();
+                Instant finish = Instant.now();
+                long timeElapsed = Duration.between(start, finish).toMillis();
+                System.out.println("tournament thread name " + Thread.currentThread().getName() + " " +
+                        timeElapsed +  " millis");
             } catch (InterruptedException e) {
 
             }
@@ -126,27 +142,30 @@ public class Game2 {
 
         private void TournamentEliminator() throws InterruptedException, IndexOutOfBoundsException {
             synchronized (lock2) {
-                mod = setSize / 2;
+
 
                 String opponentOne = "";
                 int opOneMove = 0;
                 boolean opOne = true;
-                // boolean opOneGame = true;
-
 
                 String opponentTwo = "";
                 int opTwoMove = 0;
                 boolean opTwo = true;
-                //boolean opTwoGame = true;
 
                 lock2.wait();
                 while (state) {
-                    for (int i = 0; i < 2; i++) {
+                 //   for (int i = 0; i < 2; i++) {
+                    if(list2.size() %2 != 0 && occurence2 ==0 ){
                         Count2();
-                        if(list2.size() == 1){
-                            state = false;
-                            lock2.notifyAll();
-                        }
+                        End.add(new PlayerInfo(list2.get(count2).getName(),
+                                list2.get(count2).getMove(), 0, opOne, true
+                        ));
+                        tournamentCount.addAndGet(1);
+                        occurence2 = 1;
+                    }
+                       tournamentCount.addAndGet(2);
+                        Count2();
+
                         if (count2 < list2.size()) {
 
                             opponentOne = list2.get(count2).getName();
@@ -154,6 +173,7 @@ public class Game2 {
                             opOne = list2.get(count2).isInGame();
 
                         }
+
                         Count2();
                         if (count2 < list2.size()) {
                             opponentTwo = list2.get(count2).getName();
@@ -169,52 +189,54 @@ public class Game2 {
                                 opTwoMove = arr[r.nextInt(arr.length)];
 
                             }
-                            if (opOneMove == 1 && opOneMove == 3 || opOneMove == 3 && opOneMove == 2
-                                    || opOneMove == 2 && opOneMove == 1) {
-                                System.out.println("                     " + opponentOne + " wins game ");
+                            if (opOneMove == 1 && opTwoMove == 3 || opOneMove == 3 && opTwoMove == 2
+                                    || opOneMove == 2 && opTwoMove == 1) {
+                                System.out.println("                     " + opponentOne + " wins game list 2 ");
                                 opOne = true;
                                 opTwo = false;
                             } else {
-                                System.out.println("                     " + opponentTwo + " wins game ");
+                                System.out.println("                     " + opponentTwo + " wins game " + "list2");
                                 opOne = false;
                                 opTwo = true;
                             }
-                            if (opOne == true) {
+                            if (opOne) {
                                 End.add(new PlayerInfo(opponentOne,
                                         opOneMove, 0, opOne, true
                                 ));
                             }
-                            if (opTwo == true) {
+                            if (opTwo) {
                                 End.add(new PlayerInfo(opponentTwo,
                                         opTwoMove, 0, opTwo, true));
                             }
                         }
-                    }
-                    if (mod == End.size()) {
-                        if(list2.size() == 1){
+                    //}
+                    if (list2.size() == tournamentCount.get()) {
+                      //  mod = mod/2;
+                        occurence2 = 0;
+                        tournamentCount.set(0);
+                        list2.removeAll(list2);
+
+                        if(Endlist.size() == 1){
                             state = false;
                             lock2.notifyAll();
-                            break;
+                        }else {
+                            System.out.println(" tournament awake lock 2 ");
+                            count2=-1;
+                            lock2.notifyAll();
+                            lock2.wait();
                         }
-                        list2.removeAll(list2);
-                        System.out.println(" awake lock 2 ");
-                        lock2.notifyAll();
-                        lock2.wait();
                     }
-                    if(list2.size() == 1){
-                        state = false;
-                        lock2.notifyAll();
-                    }
+                     opponentOne = "";
+                     opOneMove = 0;
+                     opOne = true;
+                     opponentTwo = "";
+                     opTwoMove = 0;
+                     opTwo = true;
 
                 }
             }
         }
 
-        private void Awake() {
-            synchronized (lock3) {
-                lock3.notifyAll();
-            }
-        }
     }
 
     private static class Cycle implements Runnable {
@@ -233,11 +255,15 @@ public class Game2 {
             this.arr = arr;
         }
 
-
         @Override
         public void run() {
             try {
+                Instant start = Instant.now();
                 End();
+                Instant finish = Instant.now();
+                long timeElapsed = Duration.between(start, finish).toMillis();
+                System.out.println("round thread name " + Thread.currentThread().getName() + " " +
+                        timeElapsed +  " millis");
             } catch (InterruptedException e) {
 
             }
@@ -256,100 +282,110 @@ public class Game2 {
         private void End() throws InterruptedException , IndexOutOfBoundsException{
             synchronized (lock2) {
                 System.out.println(" end");
+                lock2.wait();
+
                 while (state) {
 
-                    while (Endlist.size() != mod || mod == 0) {
-                        lock2.wait();
+                    String opponentOne = "";
+                    int opOneMove = 0;
+                    boolean opOne = true;
+
+                    String opponentTwo = "";
+                    int opTwoMove = 0;
+                    boolean opTwo = true;
+                    if (Endlist.size() % 2 != 0 && occurence == 0) {
+                        Count3();
+                        list2.add(new PlayerInfo(endlist.get(count3).getName(),
+                                endlist.get(count3).getMove(), 0, opOne, true
+                        ));
+                        occurence = 1;
+                        cycleCount.addAndGet(1);
                     }
 
-                    System.out.println();
-                    System.out.println("awake end");
-                    if (endlist.size() == 1) {
-                        System.out.println("Done");
-                        state = false;
-                    } else {
-                        String opponentOne = "";
+                    //for (int i = 0; i < 2; i++) {
+                    cycleCount.addAndGet(2);
+                    Count3();
+                    if (count3 < endlist.size()) {
 
-                        int opOneMove = 0;
-                        boolean opOne = true;
-                        // boolean opOneGame = true;
+                        opponentOne = endlist.get(count3).getName();
+                        opOneMove = endlist.get(count3).getMove();
+                        opOne = endlist.get(count3).isInGame();
 
+                    }
+                    Count3();
+                    if (count3 < Endlist.size()) {
 
-                        String opponentTwo = "";
-                        int opTwoMove = 0;
-                        boolean opTwo = true;
-                        //boolean opTwoGame = true;
+                        opponentTwo = endlist.get(count3).getName();
+                        opTwoMove = endlist.get(count3).getMove();
+                        opTwo = endlist.get(count3).isInGame();
+                    }
 
-                        for (int i = 0; i < 2; i++) {
-                            Count3();
-                            if (count3 < endlist.size()) {
+                    if (!opponentOne.equals("") && !opponentTwo.equals("") && opOne && opTwo) {
+                        System.out.println(opponentOne + " vs " + opponentTwo);
+                        while (opOneMove == opTwoMove) {
+                            opOneMove = arr[r.nextInt(arr.length)];
+                            opTwoMove = arr[r.nextInt(arr.length)];
 
-                                opponentOne = endlist.get(count3).getName();
-                                opOneMove = endlist.get(count3).getMove();
-                                opOne = endlist.get(count3).isInGame();
-
-                            }
-                            Count3();
-                            if (count3 < Endlist.size()) {
-
-                                opponentTwo = endlist.get(count3).getName();
-                                opTwoMove = endlist.get(count3).getMove();
-                                opTwo = endlist.get(count3).isInGame();
-                            }
-
-
-                            if (!opponentOne.equals("") && !opponentTwo.equals("") && opOne && opTwo) {
-                                System.out.println(opponentOne + " vs " + opponentTwo);
-                                while (opOneMove == opTwoMove) {
-                                    opOneMove = arr[r.nextInt(arr.length)];
-                                    opTwoMove = arr[r.nextInt(arr.length)];
-
-                                }
-                                if (opOneMove == 1 && opOneMove == 3 || opOneMove == 3 && opOneMove == 2
-                                        || opOneMove == 2 && opOneMove == 1) {
-                                    System.out.println("                     " + opponentOne + " wins game ");
-                                    opOne=true;
-                                    opTwo = false;
-                                } else {
-                                    System.out.println("                     " + opponentTwo + " wins game ");
-                                    opOne=false;
-                                    opTwo = true;
-                                }
-                                if (opOne) {
-                                    list2.add(new PlayerInfo(opponentOne,
-                                            opOneMove, 0, opOne, true
-                                    ));
-                                }
-                                if (opTwo) {
-                                    list2.add(new PlayerInfo(opponentTwo,
-                                            opTwoMove, 0, opTwo, true));
-                                }
-                            }
+                        }
+                        if (opOneMove == 1 && opTwoMove == 3 || opOneMove == 3 && opTwoMove == 2
+                                || opOneMove == 2 && opTwoMove == 1) {
+                            System.out.println("                     " + opponentOne + " wins game ");
+                            opOne = true;
+                            opTwo = false;
+                        } else {
+                            System.out.println("                     " + opponentTwo + " wins game ");
+                            opOne = false;
+                            opTwo = true;
+                        }
+                        if (opOne) {
+                            list2.add(new PlayerInfo(opponentOne,
+                                    opOneMove, 0, opOne, true
+                            ));
+                        }
+                        if (opTwo) {
+                            list2.add(new PlayerInfo(opponentTwo,
+                                    opTwoMove, 0, opTwo, true));
                         }
                     }
-                    if((mod/2) == list2.size()){
-                        System.out.println("Assleep");
-                        mod =mod/2;
+
+
+                    if (cycleCount.get() == endlist.size()) {
+                        mod = mod / 2;
+                        occurence = 0;
+                        cycleCount.set(0);
                         endlist.removeAll(endlist);
-                        count2 =-1;
-                        lock2.notifyAll();
+                        if (list2.size() == 1) {
+                            state = false;
+                            lock2.notifyAll();
+                        } else {
+                            System.out.println(" cycle awake lock 2 ");
+                            count3 = -1;
+                            lock2.notifyAll();
+                            lock2.wait();
+                        }
                     }
-                    // lock2.wait();
+                }
                 }
 
             }
-        }
+        //}
     }
 
 
     public static void main(String[] args) {
-        setSize = 10;
+        setSize = 20;
+        tournamentCount.set(0);
+        cycleCount.set(0);
+        mod =setSize;
+
+
+
         int[] arr = {1, 2, 3};
 
         int coreCount = Runtime.getRuntime().availableProcessors(); // count of cores computer has gets
         ExecutorService service = Executors.newFixedThreadPool(coreCount);
 
-        for (int i = 0; i < 2; i++) {
+        for (int i = 0; i < 10; i++) {
             service.execute(new Game2.PlayerCreate(list, "Player", arr));
         }
 

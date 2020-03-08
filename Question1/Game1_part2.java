@@ -1,3 +1,5 @@
+import java.time.Duration;
+import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
@@ -14,6 +16,7 @@ public class Game1_part2 {
     private static int count2 = -1;
     private static int setSize =0;
     private static int newSize;
+    private static int create;
 
     private static  final Object lock2 = new Object();
     private static final Object lock3 = new Object();
@@ -42,7 +45,12 @@ public class Game1_part2 {
         @Override
         public void run() {
             try {
+                Instant start = Instant.now();
                 Create();
+                Instant finish = Instant.now();
+                long timeElapsed = Duration.between(start, finish).toMillis();
+                System.out.println("create thread name " + Thread.currentThread().getName() + " " +
+                        timeElapsed +  " millis");
             } catch (Exception e) {
                 System.out.println();
             }
@@ -72,17 +80,16 @@ public class Game1_part2 {
                 boolean inGame = true;
                 boolean win = false;
                 int score = 0;
-                for (int i = 0; i < 5; i++) {
+                for (int i = 0; i < create; i++) {
                     Count();
                     int move = arr[r.nextInt(arr.length)];
                     int num = count;
                     String id = name + " " + num;
 
                     list2.add(new PlayerInfo(id, move, score, inGame, win));
-                    System.out.println("Thread create player " + id);
+                    //System.out.println("thread name " + Thread.currentThread().getName());
 
                     if (list2.size() == setSize) {
-                        System.out.println("max");
                         start = true;
                         awake();
                     }
@@ -135,7 +142,12 @@ public class Game1_part2 {
         @Override
         public void run() {
             try {
+                Instant start = Instant.now();
                 Match2();
+                Instant finish = Instant.now();
+                long timeElapsed = Duration.between(start, finish).toMillis();
+                System.out.println("Match thread name " + Thread.currentThread().getName() + " " +
+                        timeElapsed +  " millis");
             } catch (Exception e) {
 
             }
@@ -144,9 +156,7 @@ public class Game1_part2 {
 
         private void Match2() throws InterruptedException {
             synchronized (lock3) {
-                System.out.println("Asleep");
                lock3.wait();
-               System.out.println("Awake");
               //  while (true) {
                     while (!list4.isEmpty()) {
                         String pname = "";
@@ -177,7 +187,6 @@ public class Game1_part2 {
                                 String combo = ""+move + opponentMove;
 
                                 if(memo.containsKey(combo)){
-                                    System.out.println("true");
                                     Integer val = memo.get(combo);
                                     if(val == 1){
                                         score++;
@@ -207,13 +216,11 @@ public class Game1_part2 {
                                     }
                                 }
                             }
-                            System.out.println(count2);
                             try {
                                 //list4.remove(0);
                                 // Enlist.add(new PlayerInfo(pname, move, score, true, true));
                                 if (newSize == 2) {
                                 ///    System.out.println("executed ");
-                                    System.out.println(pname+ " " + move + "  " +score);
                                     Enlist.add(new PlayerInfo(pname, move, score, true, true));
 
                                 }
@@ -223,7 +230,6 @@ public class Game1_part2 {
                                 System.out.println("unable to update score");
                             }
                             if (count2 == newSize) {
-                                System.out.println("values are equivalent ");
                                 count2 = -1;
                                 newSize = newSize - 1;
                                 setSize = newSize;
@@ -260,23 +266,23 @@ public class Game1_part2 {
         @Override
         public void run() {
             try {
+                Instant start = Instant.now();
                 Winner();
+                Instant finish = Instant.now();
+                long timeElapsed = Duration.between(start, finish).toMillis();
+                System.out.println("winner thread name " + Thread.currentThread().getName() + " " +
+                        timeElapsed +  " millis");
             } catch (Exception e) {
             }
         }
 
         private void Winner() throws InterruptedException {
             synchronized (lock3) {
-                System.out.println("hello");
                 lock3.wait();
-                System.out.println("assleep again");
                 lock3.wait();
                 int Max = 0;
                 String name = " ";
 
-                for (PlayerInfo i : list4) {
-                    System.out.println(i.getName() + " score " + i.getScore() + " move: " + i.getMove());
-                }
 
                 System.out.println();
                 for (PlayerInfo i : list4) {
@@ -292,11 +298,24 @@ public class Game1_part2 {
 
 
     public static void main(String[] args) {
-        setSize = 20;
-
-        newSize = setSize-1;
         Random r = new Random();
         int[] arr = {1, 2, 3};
+        int x = 0;
+        Scanner scan = new Scanner(System.in);
+        System.out.print("Enter any number: ");
+        x= scan.nextInt();
+        setSize =x;
+        newSize = setSize-1;
+        scan.close();
+
+        int loop = 0;;
+        create = 0;
+        for(int i = 1; i < 10; i++){
+            if(x % i == 0 && x!=i){
+                loop = i;
+                create = (x/i);
+            }
+        }
 
         int coreCount = Runtime.getRuntime().availableProcessors(); // count of cores computer has gets
         ExecutorService service = Executors.newFixedThreadPool(coreCount);
@@ -305,7 +324,7 @@ public class Game1_part2 {
 
      //   }
 
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0; i < loop; i++) {
             service.execute(new PlayerCreate(list, "Player", arr));
         }
         for (int i = 0; i < 2; i++) {
